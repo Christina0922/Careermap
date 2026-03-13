@@ -1,11 +1,16 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from app.api.routes import router
 from app.database import engine, Base
+import os
 
-# 데이터베이스 테이블 생성
-Base.metadata.create_all(bind=engine)
+# 데이터베이스 테이블 생성 (Vercel에서는 지연 초기화)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Database initialization warning: {e}")
 
 app = FastAPI(
     title="CareerMap API",
@@ -28,20 +33,23 @@ app.include_router(router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def root():
-    from fastapi.responses import FileResponse
     import os
     html_path = os.path.join("static", "index.html")
     if os.path.exists(html_path):
-        return FileResponse(html_path)
+        with open(html_path, "r", encoding="utf-8") as f:
+            return f.read()
     else:
-        return {
-            "message": "CareerMap API",
-            "version": "1.0.0",
-            "docs": "/docs",
-            "client": "/static/index.html"
-        }
+        return """
+        <html>
+        <body>
+            <h1>CareerMap API</h1>
+            <p>Version: 1.0.0</p>
+            <p><a href="/docs">API Documentation</a></p>
+        </body>
+        </html>
+        """
 
 
 @app.get("/health")

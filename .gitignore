@@ -13,4 +13,5 @@ ENV/
 .DS_Store
 *.log
 alembic/versions/*.pyc
+.vercel
 
