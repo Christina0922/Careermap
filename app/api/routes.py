@@ -11,9 +11,14 @@ from app.models.user import User
 
 router = APIRouter()
 
+# 지연 import로 데이터베이스 초기화 문제 방지
+def get_db_dependency():
+    from app.database import get_db
+    return next(get_db())
+
 
 @router.post("/api/survey/submit", response_model=RIASECScore)
-def submit_survey(request: SurveySubmitRequest, db: Session = Depends(lambda: __import__('app.database', fromlist=['get_db']).get_db().__next__())):
+def submit_survey(request: SurveySubmitRequest, db: Session = Depends(get_db_dependency)):
     """
     설문 제출
     
@@ -87,4 +92,3 @@ def get_gap_analysis(
     if not gap_analysis:
         raise HTTPException(status_code=404, detail="Job not found")
     return gap_analysis
-
