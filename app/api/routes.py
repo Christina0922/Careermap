@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from app.database import get_db
 from app.schemas.survey import SurveySubmitRequest, SurveyQuestionResponse
 from app.schemas.job import JobRecommendation, JobDetail, GapAnalysis
 from app.schemas.user import UserResponse, RIASECScore
@@ -14,7 +13,7 @@ router = APIRouter()
 
 
 @router.post("/api/survey/submit", response_model=RIASECScore)
-def submit_survey(request: SurveySubmitRequest, db: Session = Depends(get_db)):
+def submit_survey(request: SurveySubmitRequest, db: Session = Depends(lambda: __import__('app.database', fromlist=['get_db']).get_db().__next__())):
     """
     설문 제출
     
@@ -32,7 +31,7 @@ def submit_survey(request: SurveySubmitRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/api/survey/questions", response_model=List[SurveyQuestionResponse])
-def get_survey_questions(db: Session = Depends(get_db)):
+def get_survey_questions(db: Session = Depends(get_db_dependency)):
     """설문 문항 조회"""
     return SurveyService.get_all_questions(db)
 
@@ -41,7 +40,7 @@ def get_survey_questions(db: Session = Depends(get_db)):
 def get_job_recommendations(
     email: str,
     top_n: int = 10,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db_dependency)
 ):
     """
     직업 추천
@@ -57,7 +56,7 @@ def get_job_recommendations(
 
 
 @router.get("/api/jobs/{job_id}", response_model=JobDetail)
-def get_job_detail(job_id: int, db: Session = Depends(get_db)):
+def get_job_detail(job_id: int, db: Session = Depends(get_db_dependency)):
     """직업 상세 정보 조회"""
     job_detail = JobService.get_job_detail(db, job_id)
     if not job_detail:
@@ -69,7 +68,7 @@ def get_job_detail(job_id: int, db: Session = Depends(get_db)):
 def get_gap_analysis(
     job_id: int,
     user_skills: str = None,  # 쉼표로 구분된 스킬 ID 리스트 (예: "1,2,3")
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db_dependency)
 ):
     """
     Gap 분석
